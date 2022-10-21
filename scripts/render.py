@@ -33,56 +33,7 @@ from nerfstudio.utils.rich_utils import ItersPerSecColumn
 
 CONSOLE = Console(width=120)
 
-
-def _render_trajectory_video(
-    pipeline: Pipeline,
-    cameras: Cameras,
-    output_filename: Path,
-    rendered_output_name: str,
-    rendered_resolution_scaling_factor: float = 1.0,
-    seconds: float = 5.0,
-) -> None:
-    """Helper function to create a video of the spiral trajectory.
-
-    Args:
-        pipeline: Pipeline to evaluate with.
-        cameras: Cameras to render.
-        output_filename: Name of the output file.
-        rendered_output_name: Name of the renderer output to use.
-        rendered_resolution_scaling_factor: Scaling factor to apply to the camera image resolution.
-        seconds: Number for the output video.
-    """
-    CONSOLE.print("[bold green]Creating trajectory video")
-    images = []
-    cameras.rescale_output_resolution(rendered_resolution_scaling_factor)
-
-    progress = Progress(
-        TextColumn(":movie_camera: Rendering :movie_camera:"),
-        BarColumn(),
-        TaskProgressColumn(show_speed=True),
-        ItersPerSecColumn(suffix="fps"),
-        TimeRemainingColumn(elapsed_when_finished=True, compact=True),
-    )
-    with progress:
-        for camera_idx in progress.track(range(cameras.size), description=""):
-            camera_ray_bundle = cameras.generate_rays(camera_indices=camera_idx).to(pipeline.device)
-            with torch.no_grad():
-                outputs = pipeline.model.get_outputs_for_camera_ray_bundle(camera_ray_bundle)
-            if rendered_output_name not in outputs:
-                CONSOLE.rule("Error", style="red")
-                CONSOLE.print(f"Could not find {rendered_output_name} in the model outputs", justify="center")
-                CONSOLE.print(f"Please set --rendered_output_name to one of: {outputs.keys()}", justify="center")
-                sys.exit(1)
-            image = outputs[rendered_output_name].cpu().numpy()
-            images.append(image)
-
-    fps = len(images) / seconds
-    # make the folder if it doesn't exist
-    output_filename.parent.mkdir(parents=True, exist_ok=True)
-    with CONSOLE.status("[yellow]Saving video", spinner="bouncingBall"):
-        media.write_video(output_filename, images, fps=fps)
-    CONSOLE.rule("[green] :tada: :tada: :tada: Success :tada: :tada: :tada:")
-    CONSOLE.print(f"[green]Saved video to {output_filename}", justify="center")
+from nerfstudio.utils.render_utils import render_trajectory_video
 
 
 @dataclasses.dataclass
@@ -135,7 +86,7 @@ class RenderTrajectory:
         else:
             assert_never(self.traj)
 
-        _render_trajectory_video(
+        render_trajectory_video(
             pipeline,
             camera_path,
             output_filename=self.output_path,

@@ -39,6 +39,10 @@ class InputDataset(Dataset):
     def __init__(self, dataparser_outputs: DataparserOutputs):
         super().__init__()
         self.dataparser_outputs = dataparser_outputs
+        num_cameras = self.dataparser_outputs.cameras.shape[0]
+        self.camera_scalings = torch.ones(num_cameras)
+        self.camera_scalings[torch.randint(num_cameras, (num_cameras // 2,))] = 0.5
+        self.dataparser_outputs.cameras.rescale_output_resolution(self.camera_scalings)
 
     def __len__(self):
         return len(self.dataparser_outputs.image_filenames)
@@ -51,6 +55,12 @@ class InputDataset(Dataset):
         """
         image_filename = self.dataparser_outputs.image_filenames[image_idx]
         pil_image = Image.open(image_filename)
+        pil_image = pil_image.resize(
+            (
+                int(pil_image.width * self.camera_scalings[image_idx]),
+                int(pil_image.height * self.camera_scalings[image_idx]),
+            )
+        )
         image = np.array(pil_image, dtype="uint8")  # shape is (h, w, 3 or 4)
         assert len(image.shape) == 3
         assert image.dtype == np.uint8

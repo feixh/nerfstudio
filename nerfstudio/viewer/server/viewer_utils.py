@@ -292,7 +292,7 @@ class ViewerState:
         # draw the training cameras and images
         image_indices = range(len(dataset))
         for idx in image_indices:
-            image = dataset[idx]["image"]
+            image = dataset[idx]["image"].images[0]
             bgr = image[..., [2, 1, 0]]
             camera_json = dataset.dataparser_outputs.cameras.to_json(camera_idx=idx, image=bgr, max_size=100)
             self.vis[f"sceneState/cameras/{idx:06d}"].write(camera_json)

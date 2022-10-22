@@ -285,7 +285,8 @@ class VanillaDataManager(DataManager):  # pylint: disable=abstract-method
         self.local_rank = local_rank
         self.sampler = None
 
-        self.train_dataset = InputDataset(config.dataparser.setup().get_dataparser_outputs(split="train"))
+        self.train_dataset = InputDataset(config.dataparser.setup().get_dataparser_outputs(split="train"), rescale=True)
+        assert self.train_dataset.dataparser_outputs.cameras.is_jagged
         self.eval_dataset = InputDataset(
             config.dataparser.setup().get_dataparser_outputs(split="val" if not test_mode else "test")
         )

@@ -37,13 +37,15 @@ class InputDataset(Dataset):
         dataparser_outputs: description of where and how to read input images.
     """
 
-    def __init__(self, dataparser_outputs: DataparserOutputs):
+    def __init__(self, dataparser_outputs: DataparserOutputs, rescale=False):
         super().__init__()
         self.dataparser_outputs = dataparser_outputs
+        self.rescale = rescale
         num_cameras = self.dataparser_outputs.cameras.shape[0]
         self.camera_scalings = torch.ones(num_cameras)
-        self.camera_scalings[torch.randint(num_cameras, (num_cameras // 2,))] = 0.5
-        self.dataparser_outputs.cameras.rescale_output_resolution(self.camera_scalings)
+        if self.rescale:
+            self.camera_scalings[torch.randint(num_cameras, (num_cameras // 2,))] = 0.5
+            self.dataparser_outputs.cameras.rescale_output_resolution(self.camera_scalings)
 
     def __len__(self):
         return len(self.dataparser_outputs.image_filenames)

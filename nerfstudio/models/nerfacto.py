@@ -255,7 +255,7 @@ class NerfactoModel(Model):
         self, outputs: Dict[str, torch.Tensor], batch: Dict[str, torch.Tensor]
     ) -> Tuple[Dict[str, float], Dict[str, torch.Tensor]]:
 
-        image = batch["image"].to(self.device)
+        image = batch["image"].images[0].to(self.device)
         rgb = outputs["rgb"]
         acc = colormaps.apply_colormap(outputs["accumulation"])
         depth = colormaps.apply_depth_colormap(

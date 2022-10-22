@@ -347,11 +347,12 @@ class Cameras(TensorDataclass):
                 - In this case, we have nothing to do, only check that the arguments are of the correct shape
 
         There is one more edge case we need to be careful with: when we have "jagged cameras" (ie: different heights
-        and widths for each camera). This isn't problematic when we specify coords, since coords is already a tensor.
-        When coords == None (ie: when we render out the whole image associated with this camera), we run into problems
-        since there's no way to stack each coordinate map as all coordinate maps are all different shapes. In this case,
-        we will need to flatten each individual coordinate map and concatenate them, giving us only one batch dimension,
-        regaurdless of the number of prepended extra batch dimensions in the camera_indices tensor.
+        and widths for each camera) AND have multiple indices. This isn't problematic when we specify coords, since
+        coords is already a tensor. When coords == None (ie: when we render out the whole image associated with this
+        camera), we run into problems since there's no way to stack each coordinate map as all coordinate maps are all
+        different shapes. In this case, we will need to flatten each individual coordinate map and concatenate them,
+        giving us only one batch dimension, regaurdless of the number of prepended extra batch dimensions in the
+        camera_indices tensor.
 
 
         Args:
@@ -394,7 +395,8 @@ class Cameras(TensorDataclass):
         # If the cameras don't all have same height / width, if coords is not none, we will need to generate
         # a flat list of coords for each camera and then concatenate otherwise our rays will be jagged.
         # Camera indices, camera_opt, and distortion will also need to be broadcasted accordingly which is non-trivial
-        if cameras.is_jagged and coords is None:
+        isbatched = len(cameras.shape) > 1 and cameras.shape[:-1].numel() > 1
+        if cameras.is_jagged and isbatched and coords is None:
             index_dim = camera_indices.shape[-1]
             camera_indices = camera_indices.reshape(-1, index_dim)
             _coords = [cameras.get_image_coords(index=tuple(index)).reshape(-1, 2) for index in camera_indices]
@@ -661,6 +663,7 @@ class Cameras(TensorDataclass):
         Returns:
             A JSON representation of the camera
         """
+        print(image.shape if image is not None else None)
         flattened = self.flatten()
         json_ = {
             "type": "PinholeCamera",

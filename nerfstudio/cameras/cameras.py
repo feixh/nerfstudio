@@ -309,8 +309,8 @@ class Cameras(TensorDataclass):
             image_coords = torch.meshgrid(torch.arange(image_height), torch.arange(image_width), indexing="ij")
             image_coords = torch.stack(image_coords, dim=-1) + pixel_offset  # stored as (y, x) coordinates
         else:
-            image_height = self.image_height[index]
-            image_width = self.image_width[index]
+            image_height = self.image_height[index].item()
+            image_width = self.image_width[index].item()
             image_coords = torch.meshgrid(torch.arange(image_height), torch.arange(image_width), indexing="ij")
             image_coords = torch.stack(image_coords, dim=-1) + pixel_offset  # stored as (y, x) coordinates
         return image_coords
@@ -397,7 +397,7 @@ class Cameras(TensorDataclass):
         if cameras.is_jagged and coords is None:
             index_dim = camera_indices.shape[-1]
             camera_indices = camera_indices.reshape(-1, index_dim)
-            _coords = [cameras.get_image_coords(index=tuple(index)).reshpe(-1, 2) for index in camera_indices]
+            _coords = [cameras.get_image_coords(index=tuple(index)).reshape(-1, 2) for index in camera_indices]
             camera_indices = torch.cat(
                 [index.unsqueeze(0).repeat(coords.shape[0], 1) for index, coords in zip(camera_indices, _coords)],
             )

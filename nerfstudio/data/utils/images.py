@@ -37,5 +37,12 @@ class BasicImages:
     """
 
     def __init__(self, images: List):
-        assert not images or isinstance(images[0], torch.Tensor), "Input should be a list of tensors"
+        assert isinstance(images, List)
+        assert not images or isinstance(
+            images[0], torch.Tensor
+        ), f"Input should be a list of tensors, not {type(images[0]) if isinstance(images, List) else type(images)}"
         self.images = images
+
+    def to(self, device):
+        assert isinstance(device, torch.device)
+        return BasicImages([image.to(device) for image in self.images])

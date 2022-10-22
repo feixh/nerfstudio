@@ -27,6 +27,7 @@ from torch.utils.data import Dataset
 from torchtyping import TensorType
 
 from nerfstudio.data.dataparsers.base_dataparser import DataparserOutputs
+from nerfstudio.data.utils.images import BasicImages
 
 
 class InputDataset(Dataset):
@@ -89,7 +90,7 @@ class InputDataset(Dataset):
         """
         image = self.get_image(image_idx)
         data = {"image_idx": image_idx}
-        data["image"] = image
+        data["image"] = BasicImages([image])
         for _, data_func_dict in self.dataparser_outputs.additional_inputs.items():
             assert "func" in data_func_dict, "Missing function to process data: specify `func` in `additional_inputs`"
             func = data_func_dict["func"]

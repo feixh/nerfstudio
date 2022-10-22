@@ -177,7 +177,7 @@ def nerfstudio_collate(
         assert all((isinstance(elem, BasicImages) for elem in batch))
         all_images = []
         for images in batch:
-            all_images.append(images.images)
+            all_images.extend(images.images)
         return BasicImages(all_images)
 
     for type_key in extra_mappings:

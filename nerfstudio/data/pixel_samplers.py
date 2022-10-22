@@ -33,8 +33,9 @@ def collate_image_dataset_batch(batch: Dict, num_rays_per_batch: int, keep_full_
         num_rays_per_batch: number of rays to sample per batch
         keep_full_image: whether or not to include a reference to the full image in returned batch
     """
-    device = batch["image"].device
-    num_images, image_height, image_width, _ = batch["image"].shape
+    device = batch["image"].images[0].device
+    num_images = len(batch["image"].images)
+    all_images = None
 
     # only sample within the mask, if the mask is in the batch
     if "mask" in batch:
@@ -42,13 +43,30 @@ def collate_image_dataset_batch(batch: Dict, num_rays_per_batch: int, keep_full_
         chosen_indices = random.sample(range(len(nonzero_indices)), k=num_rays_per_batch)
         indices = nonzero_indices[chosen_indices]
     else:
-        indices = torch.floor(
-            torch.rand((num_rays_per_batch, 3), device=device)
-            * torch.tensor([num_images, image_height, image_width], device=device)
-        ).long()
+        all_indices = None
+        all_images = None
+        for i in range(num_images):
+            image_height, image_width, _ = batch["image"].images[i].shape
+            num_rays_in_batch = num_rays_per_batch // num_images
+            if i == num_images - 1:
+                num_rays_in_batch = num_rays_per_batch - (num_images - 1) * num_rays_in_batch
+            indices = torch.floor(
+                torch.rand((num_rays_in_batch, 3), device=device)
+                * torch.tensor([1, image_height, image_width], device=device)
+            ).long()
+            indices[:, 0] = i
+            if all_indices is None:
+                all_indices = indices
+            else:
+                all_indices = torch.cat((all_indices, indices), dim=0)
+            if all_images is None:
+                all_images = batch["image"].images[i][indices[:, 1], indices[:, 2]]
+            else:
+                all_images = torch.cat((all_images, batch["image"].images[i][indices[:, 1], indices[:, 2]]), dim=0)
+        indices = all_indices
 
     c, y, x = (i.flatten() for i in torch.split(indices, 1, dim=-1))
-    image = batch["image"][c, y, x]
+    image = all_images if all_images is not None else batch["image"][c, y, x]
     mask, semantics_stuff, semantics_thing = None, None, None
     if "mask" in batch:
         mask = batch["mask"][c, y, x]

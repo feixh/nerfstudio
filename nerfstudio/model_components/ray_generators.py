@@ -44,16 +44,12 @@ class RayGenerator(nn.Module):
         Args:
             ray_indices: Contains camera, row, and col indicies for target rays.
         """
-        c = ray_indices[:, 0]  # camera indices
-        y = ray_indices[:, 1]  # row indices
-        x = ray_indices[:, 2]  # col indices
-        coords = self.image_coords[y, x]
-
-        camera_opt_to_camera = self.pose_optimizer(c)
+        camera_opt_to_camera = None
+        camera_opt_to_camera = self.pose_optimizer(ray_indices[:, 0])
 
         ray_bundle = self.cameras.generate_rays(
-            camera_indices=c.unsqueeze(-1),
-            coords=coords,
+            camera_indices=ray_indices[:, 0].unsqueeze(-1),
+            coords=ray_indices[:, 1:],
             camera_opt_to_camera=camera_opt_to_camera,
         )
         return ray_bundle
